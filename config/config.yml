@@ -15,28 +15,10 @@ Reference:
  - WAI332
 # - IPO323
 
-###########################
-### Trimmomatic Options ###
-###########################
-
-# Chosen adapter options
-Adapter_options:
-  - :2:30:10
-
-# Trimmomatic options
-Trimmomatic_options:
-  - LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:45
-  
 
 ###########################
 ### GATK Filter settings ##
 ###########################
 
 Gatk_filters:
- # - "QUALFilter:QUAL <30, QDFilter:QD < 5.0"
-#  - "FSFilter:FS > 0.5"
- # - "MQFilter:MQ < 30.0"
- # - "SORFilter:SOR > 2.5"
- # - "MQRSFilterLow:MQRankSum < -2.5"
- # - "RPRSFilterLow:ReadPosRankSum < -2.0"
- # - "RPRSFilterHigh:ReadPosRankSum > 2.3"
+ - "filter": "QUAL <30 || QD < 5.0 || FS > 0.5 || SOR > 2.5 || MQRankSum < -2.5 || ReadPosRankSum < -2.3 || ReadPosRankSum > 2.3 "
