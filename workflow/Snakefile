@@ -251,6 +251,7 @@ rule filter_vcf:
         "05_filtered/all.flagged.vcf"
     output:
         "05_filtered/all.filtered.vcf"
+    log: "logs/vcftools/filter.log"
     params:
         extra="--remove-filtered-all"
     wrapper:
