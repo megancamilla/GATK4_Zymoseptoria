@@ -41,8 +41,10 @@ This folder contains five folders:
   3. workflow: This folder contains the Snakefile which runs the whole analysis
   4. WAI332_reference: The referece genome, bowtie and GATK indexes needed if aligning reads to the Australian WAI332 reference genome
   5. IPO323_reference: The reference genome, bowtie and GATK indexes needed if aligning reads to the European IPO323 reference genome
- 
+
+##### Check if this has worked by typing into your terminal 
 `cd /PATH/TO/GATK4_Zymoseptoria`
+
 `conda activate SNPcalling`
 
 #### Step 5 Modify the config.yml by opening this file in a text editor to to choose your reference (notepad, bbedit, vscode, sublime, DO NOT OPEN IN MS WORD!) 
