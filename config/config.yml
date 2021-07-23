@@ -10,8 +10,10 @@ Samples:
 Reads_path:
  - 00_reads
 
-Reference_path:
- - WAI332_refernce
+Choose which reference you want to use by removing the "#" the default is to use the Australian reference WAI332
+Reference:
+ - WAI332
+# - IPO323
 
 ###########################
 ### Trimmomatic Options ###
