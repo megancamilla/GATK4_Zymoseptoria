@@ -10,10 +10,10 @@ Samples:
 Reads_path:
  - 00_reads
 
-# Choose which reference you want to use by removing the "#" the default is to use the Australian reference WAI332
+# Choose which reference you want to use by removing the "#" in front of WAI332 or IPO323. The pipeline will not tolerate both references un-commented. You must choose one and only one!
 Reference:
- - WAI332
-# - IPO323
+# - WAI332
+ - IPO323
 
 
 ###########################
