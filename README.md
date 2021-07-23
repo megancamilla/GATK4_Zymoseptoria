@@ -9,3 +9,11 @@ You must use conda to install Snakemake and snakemake-wrapper-utils before runni
 We recommend creating a separate conda environment for running this analysis.
 
 `conda-env create -n SNPcalling snakemake snakemake-wrapper-utils`
+
+`conda activate SNPcalling`
+
+`cd /PATH/TO/GATK4_Zymoseptoria`
+
+To run the analysis your terminal must be in the GATK4_Zymoseptoria folder.
+
+`snakemake --use-conda --cores`
