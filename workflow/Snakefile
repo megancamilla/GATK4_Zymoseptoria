@@ -13,19 +13,34 @@ configfile: "config/config.yml"
 # Setting workflow settings
 reads_dir = config["Reads_path"][0]
 samples = config["Samples"]
-ref_path = config["Reference_path"][0]
+ref_isolate = config["Reference"]
 #filter_settings = config["Gatk_filters"]
 
 #####################
 rule target_default:
     input:
-        expand("05_filtered/all.filtered.vcf",
-        sample=samples)
+        expand("05_filtered/all.filtered.vcf")
 
 rule target_trimmomatic_pe:
     input:
         expand("01_trimmed/{sample}.1.paired.fastq.gz", 
         sample=samples) 
+
+#rule target_ref_gatk:
+#   input:
+#        expand("{ref_genome}_reference/{ref_genome}.fasta",
+#        ref_genome=ref_isolate)
+
+#rule target_ref_bowtie:
+#    input:
+#        expand("{ref_genome}_reference/{ref_genome}",
+#       ref_genome=ref_isolate)
+
+def get_reference_GATK(x):
+    return expand("{ref_genome}_reference/{ref_genome}.fasta", ref_genome=ref_isolate)
+    
+def get_reference_index(x):
+    return expand("{ref_genome}_reference/{ref_genome}", ref_genome=ref_isolate)
 
 rule target_bowtie2:
     input:
@@ -103,7 +118,7 @@ rule bowtie2:
     log:
         "logs/02_bowtie2/{sample}.log"
     params:
-        index="WAI332_reference/WAI332_NCBI",  # prefix of reference genome index (built with bowtie2-build)
+        index=get_reference_index,  # prefix of reference genome index (built with bowtie2-build)
         extra="--very-sensitive-local --rg-id UVsamplesHK --rg PL:illumina --rg LB:lib1 --rg SM:{sample}"  # optional parameters
     threads: 8  # Use at least two threads
     wrapper:
@@ -154,7 +169,7 @@ rule haplotype_caller:
     input:
         # single or list of bam files
         bam="03_dedup/{sample}.dedup.bam",
-        ref="WAI332_reference/WAI332.fasta"
+        ref=get_reference_GATK
     output:
         gvcf="04_calls/{sample}.g.vcf",
     log:
@@ -177,7 +192,7 @@ rule haplotype_caller:
 rule comvbine_gvcfs:
     input:
         gvcfs=expand(["04_calls/{sample}.g.vcf"], sample=samples),
-        ref="WAI332_reference/WAI332.fasta"
+        ref=get_reference_GATK
     output:
         gvcf="04_calls/all.g.vcf",
     log:
@@ -201,7 +216,7 @@ rule genotype_gvcfs:
         gvcf="04_calls/all.g.vcf",  # combined gvcf over multiple samples
     # N.B. gvcf or genomicsdb must be specified
     # in the latter case, this is a GenomicsDB data store
-        ref="WAI332_reference/WAI332.fasta"
+        ref=get_reference_GATK
     output:
         vcf="04_calls/all.vcf",
     log:
@@ -223,13 +238,13 @@ rule genotype_gvcfs:
 rule gatk_filter:
     input:
         vcf="04_calls/all.vcf",
-        ref="WAI332_reference/WAI332.fasta",
+        ref=get_reference_GATK
     output:
         vcf="05_filtered/all.flagged.vcf"
     log:
         "logs/gatk/05_filter/snvs.log"
     params:
-        filters={"filter": "QUAL <30 || QD < 5.0 || FS > 0.5 || SOR > 2.5 || MQRankSum < -2.5 || ReadPosRankSum < -2.3 || ReadPosRankSum > 2.3 "},
+        filters={"filter": "QUAL <30 || QD < 5.0 || FS > 0.5 || SOR > 2.5 || MQRankSum < -2.5 || ReadPosRankSum < -2.3 || ReadPosRankSum > 2.3"},
         extra="",  # optional arguments, see GATK docs
         java_opts="", # optional
     # optional specification of memory usage of the JVM that snakemake will respect with global

@@ -10,7 +10,7 @@ Samples:
 Reads_path:
  - 00_reads
 
-Choose which reference you want to use by removing the "#" the default is to use the Australian reference WAI332
+# Choose which reference you want to use by removing the "#" the default is to use the Australian reference WAI332
 Reference:
  - WAI332
 # - IPO323
@@ -20,5 +20,5 @@ Reference:
 ### GATK Filter settings ##
 ###########################
 
-Gatk_filters:
- - "filter": "QUAL <30 || QD < 5.0 || FS > 0.5 || SOR > 2.5 || MQRankSum < -2.5 || ReadPosRankSum < -2.3 || ReadPosRankSum > 2.3 "
+#Gatk_filters:
+# - ""filter": "QUAL <30 || QD < 5.0 || FS > 0.5 || SOR > 2.5 || MQRankSum < -2.5 || ReadPosRankSum < -2.3 || ReadPosRankSum > 2.3""
