@@ -1,0 +1,260 @@
+# Ztritici GATK4 SNPcalling Workflow with WAI332 reference
+# Workflow to align reads and call SNPs with known and pre-formatted reference
+# M. McDonald.
+# University of Birmingham
+
+#####################
+### Initalisation ###
+#####################
+
+# Set the workflow configuaration file
+configfile: "config/config.yml"
+
+# Setting workflow settings
+reads_dir = config["Reads_path"][0]
+samples = config["Samples"]
+ref_path = config["Reference_path"][0]
+#filter_settings = config["Gatk_filters"]
+
+#####################
+rule target_default:
+    input:
+        expand("05_filtered/all.filtered.vcf",
+        sample=samples)
+
+rule target_trimmomatic_pe:
+    input:
+        expand("01_trimmed/{sample}.1.paired.fastq.gz", 
+        sample=samples) 
+
+rule target_bowtie2:
+    input:
+        expand("02_mapped/{sample}.bam",
+        sample=samples)
+
+rule target_sort:
+    input:
+        expand("02_mapped/{sample}.sorted.bam",
+        sample=samples)
+
+rule target_dedup:
+    input:
+        expand("03_dedup/{sample}.dedup.bam",
+        sample=samples)
+
+rule target_haplotypecaller:
+    input:
+        expand("04_calls/{sample}.g.vcf",
+        sample=samples)
+        
+rule target_combinegvcfs:
+    input:
+        "04_calls/all.g.vcf"
+        
+rule target_allvcf:
+    input:
+        "04_calls/all.vcf"
+        
+rule target_filteredvcf:
+    input:
+        "05_filtered/all.filtered.vcf"
+        
+
+####### Trimmomatic #########
+
+# Trim fastq sequences with Trimmomatic PE wrapper
+
+rule trimmomatic_pe:
+    input:
+        r1="00_reads/{sample}.1.fastq.gz",
+        r2="00_reads/{sample}.2.fastq.gz"
+    output:
+        r1="01_trimmed/{sample}.1.paired.fastq.gz",
+        r2="01_trimmed/{sample}.2.paired.fastq.gz",
+        # reads where trimming entirely removed the mate
+        r1_unpaired="01_trimmed/{sample}.1.unpaired.fastq.gz",
+        r2_unpaired="01_trimmed/{sample}.2.unpaired.fastq.gz"
+    log:
+        "logs/01_trimmomatic/{sample}.log"
+    params:
+        # list of trimmers (see manual)
+        trimmer=["ILLUMINACLIP:NexteraPE-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:45"],
+        # optional parameters
+        extra="",
+        compression_level="-9"
+    threads:
+        6
+    # optional specification of memory usage of the JVM that snakemake will respect with global
+    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
+    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
+    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
+    resources:
+        mem_mb=16024
+    wrapper:
+        "0.77.0/bio/trimmomatic/pe"
+
+######### Bowtie2 with prebuilt reference ########
+
+rule bowtie2:
+    input:
+        sample=["01_trimmed/{sample}.1.paired.fastq.gz", "01_trimmed/{sample}.2.paired.fastq.gz"]
+    output:
+        "02_mapped/{sample}.bam"
+    log:
+        "logs/02_bowtie2/{sample}.log"
+    params:
+        index="WAI332_reference/WAI332_NCBI",  # prefix of reference genome index (built with bowtie2-build)
+        extra="--very-sensitive-local --rg-id UVsamplesHK --rg PL:illumina --rg LB:lib1 --rg SM:{sample}"  # optional parameters
+    threads: 8  # Use at least two threads
+    wrapper:
+        "0.77.0/bio/bowtie2/align"
+
+####### Samtools sort bam file ############
+
+rule samtools_sort:
+    input:
+        "02_mapped/{sample}.bam"
+    output:
+        "02_mapped/{sample}.sorted.bam"
+    params:
+        extra = "-m 16G",
+        tmp_dir = "/tmp/"
+    threads:  # Samtools takes additional threads through its option -@
+        8     # This value - 1 will be sent to -@.
+    wrapper:
+        "0.77.0/bio/samtools/sort"
+
+####### GATK remove PCR Duplicates ###########
+
+rule mark_duplicates_spark:
+    input:
+        "02_mapped/{sample}.sorted.bam"
+    output:
+        bam="03_dedup/{sample}.dedup.bam",
+        metrics="03_dedup/{sample}.metrics.txt"
+    log:
+        "logs/03_dedup/{sample}.log"
+    params:
+        extra="--remove-sequencing-duplicates",  # optional
+        java_opts="", # optional
+        #spark_runner="",  # optional, local by default
+        #spark_0.77.0="",  # optional
+        #spark_extra="", # optional
+    resources:
+        mem_mb=16024
+    threads: 6
+    wrapper:
+        "0.77.0/bio/gatk/markduplicatesspark"
+
+
+######## GATK Haplotype Caller with prebuilt reference ########
+
+
+rule haplotype_caller:
+    input:
+        # single or list of bam files
+        bam="03_dedup/{sample}.dedup.bam",
+        ref="WAI332_reference/WAI332.fasta"
+    output:
+        gvcf="04_calls/{sample}.g.vcf",
+    log:
+        "logs/04_gatk/haplotypecaller/{sample}.log"
+    params:
+        extra="--sample-ploidy 1 --max-alternate-alleles 2",  # optional
+        java_opts="", # optional
+    # optional specification of memory usage of the JVM that snakemake will respect with global
+    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
+    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
+    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
+    resources:
+        mem_mb=16024
+    wrapper:
+        "0.77.0/bio/gatk/haplotypecaller"
+
+
+########### GATK CombineGVCFs ########
+
+rule comvbine_gvcfs:
+    input:
+        gvcfs=expand(["04_calls/{sample}.g.vcf"], sample=samples),
+        ref="WAI332_reference/WAI332.fasta"
+    output:
+        gvcf="04_calls/all.g.vcf",
+    log:
+        "logs/04_gatk/combinegvcfs.log"
+    params:
+        extra="",  # optional
+        java_opts="",  # optional
+    # optional specification of memory usage of the JVM that snakemake will respect with global
+    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
+    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
+    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
+    resources:
+        mem_mb=16024
+    wrapper:
+        "0.77.0/bio/gatk/combinegvcfs"
+        
+########## GATK genotype_gvcfs ############
+
+rule genotype_gvcfs:
+    input:
+        gvcf="04_calls/all.g.vcf",  # combined gvcf over multiple samples
+    # N.B. gvcf or genomicsdb must be specified
+    # in the latter case, this is a GenomicsDB data store
+        ref="WAI332_reference/WAI332.fasta"
+    output:
+        vcf="04_calls/all.vcf",
+    log:
+        "logs/04_gatk/genotypegvcfs.log"
+    params:
+        extra="",  # optional
+        java_opts="", # optional
+    # optional specification of memory usage of the JVM that snakemake will respect with global
+    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
+    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
+    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
+    resources:
+        mem_mb=16024
+    wrapper:
+        "0.77.0/bio/gatk/genotypegvcfs"        
+        
+########## GATK filter final VCF file ################
+
+rule gatk_filter:
+    input:
+        vcf="04_calls/all.vcf",
+        ref="WAI332_reference/WAI332.fasta",
+    output:
+        vcf="05_filtered/all.flagged.vcf"
+    log:
+        "logs/gatk/05_filter/snvs.log"
+    params:
+        filters={"filter": "QUAL <30 || QD < 5.0 || FS > 0.5 || SOR > 2.5 || MQRankSum < -2.5 || ReadPosRankSum < -2.3 || ReadPosRankSum > 2.3 "},
+        extra="",  # optional arguments, see GATK docs
+        java_opts="", # optional
+    # optional specification of memory usage of the JVM that snakemake will respect with global
+    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
+    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
+    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
+    resources:
+        mem_mb=16024
+    wrapper:
+        "0.77.0/bio/gatk/variantfiltration"
+
+
+
+######### VCFtools remove filtered SNPS #############
+
+
+rule filter_vcf:
+    input:
+        "05_filtered/all.flagged.vcf"
+    output:
+        "05_filtered/all.filtered.vcf"
+    log: "logs/vcftools/filter.log"
+    params:
+        extra="--remove-filtered-all"
+    wrapper:
+        "0.77.0/bio/vcftools/filter"  
+
+      

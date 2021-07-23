@@ -1,0 +1,7 @@
+# .gitignore GATK4_Zymoseptoria
+# What files to ignore for version control
+
+.snakemake
+.DS_Store
+.ipynb_checkpoints
+logs/

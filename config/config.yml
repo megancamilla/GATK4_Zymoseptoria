@@ -1,0 +1,40 @@
+#########################
+### Workflow options ####
+#########################
+
+## List of piared end sample names
+Samples:
+ - UV1short
+ - UV2short
+
+Reads_path:
+ - 00_reads
+
+Reference_path:
+ - WAI332_refernce
+
+###########################
+### Trimmomatic Options ###
+###########################
+
+# Chosen adapter options
+Adapter_options:
+  - :2:30:10
+
+# Trimmomatic options
+Trimmomatic_options:
+  - LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:45
+  
+
+###########################
+### GATK Filter settings ##
+###########################
+
+Gatk_filters:
+ # - "QUALFilter:QUAL <30, QDFilter:QD < 5.0"
+#  - "FSFilter:FS > 0.5"
+ # - "MQFilter:MQ < 30.0"
+ # - "SORFilter:SOR > 2.5"
+ # - "MQRSFilterLow:MQRankSum < -2.5"
+ # - "RPRSFilterLow:ReadPosRankSum < -2.0"
+ # - "RPRSFilterHigh:ReadPosRankSum > 2.3"
