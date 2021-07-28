@@ -25,7 +25,7 @@ Get the free version of anaconda from here: [https://www.anaconda.com/products/i
 You must use conda to install Snakemake and snakemake-wrapper-utils before running this pipeline.
 We recommend creating a separate conda environment for running this analysis, we will call this environment "SNPcalling"
 
-`conda create --name SNPcalling snakemake snakemake-wrapper-utils`
+`conda create --name SNPcalling snakemake snakemake-wrapper-utils mamba`
 
 ##### Check if this has worked by typing in your terminal
 
