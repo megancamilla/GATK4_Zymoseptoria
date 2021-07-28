@@ -80,6 +80,7 @@ In the config.yml file you will see these lines:
 \## List of paired end sample names
 
 Samples:
+
 \- UV1short
 
 \- UV2short
