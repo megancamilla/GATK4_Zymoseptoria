@@ -19,7 +19,7 @@ ref_isolate = config["Reference"]
 #####################
 rule target_default:
     input:
-        expand("05_filtered/all.filtered.vcf")
+        expand("05_filtered/all.filtered.tab")
 
 rule target_trimmomatic_pe:
     input:
@@ -74,6 +74,9 @@ rule target_filteredvcf:
     input:
         "05_filtered/all.filtered.vcf"
         
+rule target_vcftotab:
+    input:
+        "05_filtered/all.filtered.tab"
 
 ####### Trimmomatic #########
 
@@ -156,8 +159,8 @@ rule mark_duplicates_spark:
         #spark_0.77.0="",  # optional
         #spark_extra="", # optional
     resources:
-        mem_mb=16024
-    threads: 6
+        mem_mb=31024
+    threads: 8
     wrapper:
         "0.77.0/bio/gatk/markduplicatesspark"
 
@@ -272,4 +275,15 @@ rule filter_vcf:
     wrapper:
         "0.77.0/bio/vcftools/filter"  
 
-      
+
+######## GAKT VariantToTable ####################
+
+rule vcftotab:
+    input:
+        "05_filtered/all.filtered.vcf"
+    output:
+        "05_filtered/all.filtered.tab"
+    log:
+        "logs/vcftools/vcf_to_tab.log"
+    shell:
+        "gatk VariantsToTable --F CHROM -F POS -F TYPE -F EVENTLENGTH -F NSAMPLES -F NCALLED -F QUAL -F AC -F AF -F AN -F DP -F DP -F QD -F FS -F MLEAC -F MQ -F MQRankSum -F ReadPosRankSum -F SOR -GF GT --variant {input} --output {output}"
