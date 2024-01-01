@@ -109,7 +109,7 @@ rule trimmomatic_pe:
     resources:
         mem_mb=16024
     wrapper:
-        "0.77.0/bio/trimmomatic/pe"
+        "v3.3.3/bio/trimmomatic/pe"
 
 ######### Bowtie2 with prebuilt reference ########
 
@@ -125,7 +125,7 @@ rule bowtie2:
         extra="--very-sensitive-local --rg-id UVsamplesHK --rg PL:illumina --rg LB:lib1 --rg SM:{sample}"  # optional parameters
     threads: 8  # Use at least two threads
     wrapper:
-        "0.77.0/bio/bowtie2/align"
+        "v3.3.3/bio/bowtie2/align"
 
 ####### Samtools sort bam file ############
 
@@ -140,7 +140,7 @@ rule samtools_sort:
     threads:  # Samtools takes additional threads through its option -@
         8     # This value - 1 will be sent to -@.
     wrapper:
-        "0.77.0/bio/samtools/sort"
+        "v3.3.3/bio/samtools/sort"
 
 ####### GATK remove PCR Duplicates ###########
 
@@ -156,13 +156,13 @@ rule mark_duplicates_spark:
         extra="--remove-sequencing-duplicates",  # optional
         java_opts="", # optional
         #spark_runner="",  # optional, local by default
-        #spark_0.77.0="",  # optional
+        #spark_v3.3.3="",  # optional
         #spark_extra="", # optional
     resources:
         mem_mb=31024
     threads: 8
     wrapper:
-        "0.77.0/bio/gatk/markduplicatesspark"
+        "v3.3.3/bio/gatk/markduplicatesspark"
 
 
 ######## GATK Haplotype Caller with prebuilt reference ########
@@ -187,7 +187,7 @@ rule haplotype_caller:
     resources:
         mem_mb=16024
     wrapper:
-        "0.77.0/bio/gatk/haplotypecaller"
+        "v3.3.3/bio/gatk/haplotypecaller"
 
 
 ########### GATK CombineGVCFs ########
@@ -210,7 +210,7 @@ rule comvbine_gvcfs:
     resources:
         mem_mb=16024
     wrapper:
-        "0.77.0/bio/gatk/combinegvcfs"
+        "v3.3.3/bio/gatk/combinegvcfs"
         
 ########## GATK genotype_gvcfs ############
 
@@ -234,7 +234,7 @@ rule genotype_gvcfs:
     resources:
         mem_mb=16024
     wrapper:
-        "0.77.0/bio/gatk/genotypegvcfs"        
+        "v3.3.3/bio/gatk/genotypegvcfs"        
         
 ########## GATK filter final VCF file ################
 
@@ -257,7 +257,7 @@ rule gatk_filter:
     resources:
         mem_mb=16024
     wrapper:
-        "0.77.0/bio/gatk/variantfiltration"
+        "v3.3.3/bio/gatk/variantfiltration"
 
 
 
@@ -273,7 +273,7 @@ rule filter_vcf:
     params:
         extra="--remove-filtered-all"
     wrapper:
-        "0.77.0/bio/vcftools/filter"  
+        "v3.3.3/bio/vcftools/filter"  
 
 
 ######## GAKT VariantToTable ####################
@@ -286,4 +286,4 @@ rule vcftotab:
     log:
         "logs/vcftools/vcf_to_tab.log"
     shell:
-        "gatk VariantsToTable --F CHROM -F POS -F TYPE -F EVENTLENGTH -F NSAMPLES -F NCALLED -F QUAL -F AC -F AF -F AN -F DP -F DP -F QD -F FS -F MLEAC -F MQ -F MQRankSum -F ReadPosRankSum -F SOR -GF GT --variant {input} --output {output}"
+        "gatk VariantsToTable --F CHROM -F POS -F REF -F TYPE -F EVENTLENGTH -F NSAMPLES -F NCALLED -F QUAL -F AC -F AF -F AN -F DP -F DP -F QD -F FS -F MLEAC -F MQ -F MQRankSum -F ReadPosRankSum -F SOR -GF GT --variant {input} --output {output}"
